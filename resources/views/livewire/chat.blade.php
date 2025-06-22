@@ -5,8 +5,8 @@
 
     <!-- Chat Container -->
     <div class="d-flex"
-         style="height: 600px; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background-color: white;">
-        <style>
+         style="height: 750px; border-radius: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background-color: white;">
+    <style>
             .user-list-item:hover:not(.selected-user) {
                 background-color: #F3F3F4;
             }
@@ -65,7 +65,21 @@
             </div>
 
             <!-- Messages -->
-            <div class="flex-grow-1 p-4 overflow-auto" style="background-color: #f8f9fa;">
+            <div x-data="{
+                    scrollToBottom() {
+                        setTimeout(() => {
+                            this.$refs.messagesContainer.scrollTo({
+                                top: this.$refs.messagesContainer.scrollHeight,
+                                behavior: 'smooth'
+                            });
+                        }, 50);
+                    }
+                }"
+                 x-init="scrollToBottom()"
+                 @scroll-to-bottom.window="scrollToBottom()"
+                 x-ref="messagesContainer"
+                 class="flex-grow-1 p-4 overflow-auto"
+                 style="background-color: #f8f9fa;">
                 @foreach($messages as $message)
                     <div
                         class="d-flex flex-column @if($message->sender_id === auth()->id()) align-items-end @endif mb-3">
@@ -85,10 +99,51 @@
                 @endforeach
             </div>
 
+            <div id="typing-indicator" class="p-2 align-items-center"
+                 style="gap: 4px; background-color: #f8f9fa; display: none; transition: opacity 0.3s;">
+            <span id="typing-text" class="text-muted small"></span>
+                <div class="typing-dots d-flex" style="gap: 3px;">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+                <style>
+                    .typing-dots {
+                        display: none;
+                        align-items: center;
+                    }
+
+                    .dot {
+                        width: 3px;
+                        height: 3px;
+                        background: #5c5d62;
+                        border-radius: 50%;
+                        animation: typing 1.5s infinite ease-in-out;
+                    }
+
+                    .dot:nth-child(2) {
+                        animation-delay: 0.2s;
+                    }
+
+                    .dot:nth-child(3) {
+                        animation-delay: 0.4s;
+                    }
+
+                    @keyframes typing {
+                        0%, 60%, 100% {
+                            transform: translateY(0);
+                        }
+                        30% {
+                            transform: translateY(-2px);
+                        }
+                    }
+                </style>
+            </div>
+
             <!-- Input -->
             <form wire:submit="submit" class="p-4 border-top d-flex align-items-center gap-3">
                 <input
-                    wire:model="newMessage"
+                    wire:model.live="newMessage"
                     type="text"
                     class="form-control rounded-pill border-0 shadow-sm px-4 py-3"
                     placeholder="Type your message..."
@@ -105,3 +160,28 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('livewire:initialized', function () {
+        Livewire.on('userTyping', function (event) {
+            console.log(event);
+            window.Echo.private(`chat.${event.selectedUserID}`).whisper('typing', {
+                userID: event.userID,
+                userName: event.userName,
+            });
+        });
+        window.Echo.private(`chat.{{$loginID}}`).listenForWhisper('typing', (e) => {
+            const indicator = document.getElementById('typing-indicator');
+            const dots = document.querySelector('.typing-dots');
+            const text = document.getElementById('typing-text');
+            text.innerText = `${e.userName} is typing`;
+            indicator.style.display = 'flex';
+            dots.style.display = 'flex';
+            setTimeout(() => {
+                text.innerText = '';
+                indicator.style.display = 'none';
+                dots.style.display = 'none';
+            }, 2000);
+        })
+    });
+</script>

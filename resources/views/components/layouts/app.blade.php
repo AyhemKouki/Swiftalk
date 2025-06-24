@@ -50,6 +50,13 @@
                     <i class="bi bi-chat me-2"></i> Chat
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a wire:navigate href="{{route('groups')}}" class="nav-link @if(Route::is('groups')) active @endif">
+                    <i class="bi bi-people me-2"></i> Group Chat
+                </a>
+            </li>
+
             <li class="nav-item">
                 <a wire:navigate href="#" class="nav-link">
                     <i class="bi bi-calendar me-2"></i> Calendar
@@ -118,6 +125,13 @@
                         <i class="bi bi-chat me-2"></i> Chat
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a wire:navigate href="{{route('groups')}}" class="nav-link @if(Route::is('groups')) active @endif">
+                        <i class="bi bi-people me-2"></i> Group Chat
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a wire:navigate href="#" class="nav-link">
                         <i class="bi bi-calendar me-2"></i> Calendar

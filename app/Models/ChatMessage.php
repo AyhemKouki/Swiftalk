@@ -6,7 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class ChatMessage extends Model
 {
-    protected $fillable = ['sender_id', 'receiver_id' ,'message'];
+
+    protected $fillable = [
+        'sender_id',
+        'receiver_id',
+        'group_id',
+        'message',
+        'message_type'
+    ];
+    public function group(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
 
     public function sender()
     {
@@ -16,4 +27,5 @@ class ChatMessage extends Model
     {
         return $this->belongsTo(User::class, 'receiver_id');
     }
+
 }

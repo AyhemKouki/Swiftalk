@@ -82,8 +82,12 @@
         <div class="dropdown mt-3">
             <button class="btn d-flex align-items-center text-decoration-none dropdown-toggle"
                     data-bs-toggle="dropdown" aria-expanded="false">
-                <img src="{{asset('images/male.jpg')}}" alt="Olivia Martin" width="32" height="32"
+                @if(auth()->user()->profile_image)
+                <img src="{{asset('storage/'.auth()->user()->profile_image)}}" alt="Olivia Martin" width="32" height="32"
                      class="rounded-circle me-2">
+                @else
+                    <img src="{{asset('images/male.jpg')}}" alt="Olivia Martin" width="32" height="32" class="rounded-circle me-2">
+                @endif
                 <strong>{{auth()->user()->name}}</strong>
             </button>
             <ul class="dropdown-menu dropdown-menu-dark text-small shadow">

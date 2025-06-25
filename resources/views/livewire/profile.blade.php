@@ -14,6 +14,20 @@
             <!-- Profile Information Section -->
             <div class="profile-section">
                 <div class="section-header">
+                    <div class="profile-image-container">
+                        @if(auth()->user()->profile_image)
+                            <img src="{{ Storage::url(auth()->user()->profile_image) }}" alt="Profile picture"
+                                 class="profile-image">
+                        @else
+                            <div class="profile-image-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                          d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
+                                          clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                        @endif
+                    </div>
                     <div class="header-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                             <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
@@ -23,9 +37,21 @@
                     <p class="section-description">Update your account's profile information and email address</p>
                 </div>
 
-                <form method="post" action="{{ route('profile.update') }}" class="profile-form">
-                    @csrf
+                <form method="post" action="{{ route('profile.update') }}" class="profile-form"
+                      enctype="multipart/form-data">
+                @csrf
                     @method('patch')
+
+                    <div class="form-group">
+                        <label for="profile_image" class="form-label">Profile Image</label>
+                        <div class="input-wrapper">
+                            <input id="profile_image" name="profile_image" type="file" class="form-input"
+                                   accept="image/*">
+                        </div>
+                        @error('profile_image')
+                        <p class="form-error">{{ $message }}</p>
+                        @enderror
+                    </div>
 
                     <div class="form-group">
                         <label for="name" class="form-label">Name</label>
@@ -203,6 +229,37 @@
     </div>
 
     <style>
+        /* Profile Image Styles */
+        .profile-image-container {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 2rem;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #e5e7eb;
+        }
+
+        .profile-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-image-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+        }
+
+        .profile-image-placeholder svg {
+            width: 60%;
+            height: 60%;
+            color: #9ca3af;
+        }
+
         /* Base Styles */
         .profile-container {
             max-width: 1200px;

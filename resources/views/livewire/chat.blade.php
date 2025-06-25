@@ -32,9 +32,16 @@
                          style="cursor: pointer; transition: background-color 0.2s ease;">
                     <div class="d-flex align-items-center">
                             <div class="position-relative">
-                                <img src="{{asset('images/male.jpg')}}" alt="User Avatar" class="rounded-circle"
-                                     width="40"
-                                     height="40">
+                                @if($user->profile_image)
+                                    <img src="{{asset('storage/'.$user->profile_image)}}" alt="User Avatar" class="rounded-circle"
+                                         width="40"
+                                         height="40">
+                                @else
+                                    <img src="{{asset('images/male.jpg')}}" alt="User Avatar" class="rounded-circle"
+                                         width="40"
+                                         height="40">
+                                @endif
+
                                 <span class="position-absolute bottom-0 end-0 bg-success rounded-circle"
                                       style="width: 12px; height: 12px; border: 2px solid white;"></span>
                             </div>
@@ -53,8 +60,15 @@
             <!-- Header -->
             <div class="p-4 border-bottom d-flex align-items-center">
                 <div class="position-relative">
-                    <img src="{{asset('images/male.jpg')}}" alt="User Avatar" class="rounded-circle" width="48"
-                         height="48">
+                    @if($selectedUser->profile_image)
+                        <img src="{{asset('storage/'.$selectedUser->profile_image)}}" alt="User Avatar" class="rounded-circle"
+                             width="40"
+                             height="40">
+                    @else
+                        <img src="{{asset('images/male.jpg')}}" alt="User Avatar" class="rounded-circle"
+                             width="40"
+                             height="40">
+                    @endif
                     <span class="position-absolute bottom-0 end-0 bg-success rounded-circle"
                           style="width: 12px; height: 12px; border: 2px solid white;"></span>
                 </div>

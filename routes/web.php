@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/group', [GroupController::class, 'create'])->name('groups.create');
     Route::post('/groups/{group}/members', [GroupController::class, 'addMember'])->name('groups.add-member');
     Route::delete('/groups/{group}/members/{user}', [GroupController::class, 'removeMember'])->name('groups.remove-member');
+    Route::patch('/groups/{group}', [GroupController::class, 'update'])->name('groups.update');
+    Route::delete('/groups/{group}', [GroupController::class, 'destroy'])->name('groups.destroy');
 });
 
 //Route::middleware('auth')->group(function () {

@@ -76,6 +76,11 @@ class GroupChat extends Component
 
     public function newGroupMessageNotification($message): void
     {
+        // Éviter les doublons pour l'expéditeur
+        if ($message['sender_id'] == auth()->id()) {
+            return;
+        }
+
         if ($this->selectedGroup && $message['group_id'] == $this->selectedGroup->id) {
             $messageObj = ChatMessage::with('sender')->find($message['id']);
             $this->messages->push($messageObj);

@@ -80,4 +80,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Group::class, 'created_by');
     }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
 }

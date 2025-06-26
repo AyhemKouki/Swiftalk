@@ -14,6 +14,7 @@
     @vite(['resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js'></script>
 </head>
 <body class="min-vh-100 bg-body">
 <!-- Mobile Header -->
@@ -58,7 +59,7 @@
             </li>
 
             <li class="nav-item">
-                <a wire:navigate href="#" class="nav-link">
+                <a wire:navigate href="{{route('calendar')}}" class="nav-link @if(Route::is('calendar')) active @endif">
                     <i class="bi bi-calendar me-2"></i> Calendar
                 </a>
             </li>

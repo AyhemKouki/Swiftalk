@@ -186,44 +186,29 @@
                 </div>
 
                 <div class="delete-content">
-                    <p>Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.</p>
+                    <p>Once your account is deleted, all of its resources and data will be permanently deleted. Please
+                        enter your password to confirm you would like to permanently delete your account.</p>
 
-                    <button type="button" class="btn-danger" onclick="document.getElementById('delete-modal').showModal()">
-                        Delete Account
-                    </button>
+                    <form method="post" action="{{ route('profile.destroy') }}" class="delete-form">
+                        @csrf
+                        @method('delete')
+
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-wrapper">
+                                <input id="password" name="password" type="password" class="form-input"
+                                       placeholder="Enter your password">
+                            </div>
+                            @error('password', 'userDeletion')
+                            <p class="form-error">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <button type="submit" class="btn-danger">
+                            Delete Account
+                        </button>
+                    </form>
                 </div>
-
-                <!-- Delete Account Modal -->
-                <dialog id="delete-modal" class="modal">
-                    <div class="modal-content">
-                        <h3>Are you sure you want to delete your account?</h3>
-                        <p>Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.</p>
-
-                        <form method="post" action="{{ route('profile.destroy') }}" class="delete-form">
-                            @csrf
-                            @method('delete')
-
-                            <div class="form-group">
-                                <label for="password" class="form-label">Password</label>
-                                <div class="input-wrapper">
-                                    <input id="password" name="password" type="password" class="form-input" placeholder="Enter your password">
-                                </div>
-                                @error('password', 'userDeletion')
-                                <p class="form-error">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div class="modal-actions">
-                                <button type="button" class="btn-secondary" onclick="document.getElementById('delete-modal').close()">
-                                    Cancel
-                                </button>
-                                <button type="submit" class="btn-danger">
-                                    Delete Account
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </dialog>
             </div>
         </div>
     </div>
@@ -486,45 +471,10 @@
             background-color: #f9fafb;
         }
 
-        /* Modal Styles */
-        .modal {
-            border: none;
-            border-radius: 0.75rem;
-            padding: 0;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .modal::backdrop {
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            padding: 2rem;
-        }
-
-        .modal-content h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #111827;
-        }
-
-        .modal-content p {
-            color: #6b7280;
-            margin-bottom: 1.5rem;
-        }
-
         .delete-form {
             display: grid;
             gap: 1.5rem;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-            margin-top: 1.5rem;
+            margin-top: 1rem;
         }
 
         @media (min-width: 768px) {

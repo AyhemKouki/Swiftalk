@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ProfileController;
+use App\Livewire\Calendar;
 use App\Livewire\Chat;
 use App\Livewire\Dashboard;
 use App\Livewire\GroupChat;
@@ -10,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('livewire.home');
-});
+})->name('home');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
@@ -18,6 +19,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat', Chat::class)->name('chat');
 
     Route::get('/groups', GroupChat::class)->name('groups');
+
+    Route::get('/calendar' , Calendar::class)->name('calendar');
 
     Route::get('/profile' , Profile::class)->name('profile');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

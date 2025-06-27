@@ -104,7 +104,38 @@
                                 class="small @if($message->sender_id === auth()->id()) text-white-50 @else text-muted @endif mb-1">
                                 {{ $message->sender_id === auth()->id() ? 'You' : $selectedUser->name }}
                             </div>
-                            {{$message->message}}
+                            <div>{{$message->message}}</div>
+                            @if($message->hasAttachment())
+                                <div class="mt-2">
+                                    @php
+                                        $fileType = strtolower(pathinfo($message->attachment_name, PATHINFO_EXTENSION));
+                                        $isImage = in_array($fileType, ['jpg', 'jpeg', 'png', 'gif']);
+                                    @endphp
+
+                                    @if($isImage)
+                                        <div class="attachment-preview mb-2">
+                                            <img src="{{ $message->getAttachmentUrl() }}" alt="Attachment Preview"
+                                                 class="img-fluid rounded" style="max-height: 200px;">
+                                        </div>
+                                    @endif
+
+                                    <a href="{{ $message->getAttachmentUrl() }}" target="_blank"
+                                       class="d-flex align-items-center p-2 rounded bg-light text-decoration-none">
+                                        <i class="bi bi-{{ $isImage ? 'image' : ($fileType == 'pdf' ? 'file-pdf' :
+                                            ($fileType == 'doc' || $fileType == 'docx' ? 'file-word' :
+                                            ($fileType == 'xls' || $fileType == 'xlsx' ? 'file-excel' :
+                                            'file-earmark'))) }} me-2"></i>
+                                        <div class="d-flex flex-column">
+                                            <span class="small text-truncate" style="max-width: 200px;">
+                                                {{ $message->attachment_name }}
+                                            </span>
+                                            <span class="text-muted" style="font-size: 0.75rem;">
+                                                {{ $message->attachment_type }}
+                                            </span>
+                                        </div>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                         <div class="small text-muted mt-1">
                             {{ $message->created_at->format('g:i A') }}
@@ -155,21 +186,40 @@
             </div>
 
             <!-- Input -->
-            <form wire:submit="submit" class="p-4 border-top d-flex align-items-center gap-3">
-                <input
-                    wire:model.live="newMessage"
-                    type="text"
-                    class="form-control rounded-pill border-0 shadow-sm px-4 py-3"
-                    placeholder="Type your message..."
-                    style="background-color: #f8f9fa;"
-                />
-                <button
-                    type="submit"
-                    class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
-                    style="width: 46px; height: 46px;"
-                >
-                    <i class="bi bi-send-fill"></i>
-                </button>
+            <form wire:submit="submit" class="p-4 border-top">
+                <div class="d-flex flex-column gap-2">
+                    @if($attachment)
+                        <div class="d-flex align-items-center gap-2 bg-light p-2 rounded">
+                            <i class="bi bi-paperclip"></i>
+                            <span class="small">{{ $attachment->getClientOriginalName() }}</span>
+                            <button type="button" class="btn btn-sm text-danger" wire:click="removeAttachment">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    @endif
+                    <div class="d-flex align-items-center gap-3">
+                        <input
+                            wire:model.live="newMessage"
+                            type="text"
+                            class="form-control rounded-pill border-0 shadow-sm px-4 py-3"
+                            placeholder="Type your message..."
+                            style="background-color: #f8f9fa;"
+                        />
+                        <label
+                            class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style="width: 46px; height: 46px;">
+                            <i class="bi bi-paperclip"></i>
+                            <input type="file" wire:model="attachment" class="d-none">
+                        </label>
+                        <button
+                            type="submit"
+                            class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                            style="width: 46px; height: 46px;"
+                        >
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

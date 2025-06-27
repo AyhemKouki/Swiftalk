@@ -7,9 +7,12 @@ use App\Models\ChatMessage;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\WithFileUploads;
 
 class Chat extends Component
 {
+    use WithFileUploads;
+
     public $users;
     public $selectedUser;
     public $newMessage;
@@ -17,6 +20,9 @@ class Chat extends Component
     public $messages;
 
     public $loginID;
+
+    public $attachment;
+
 
     public function mount()
     {
@@ -55,20 +61,38 @@ class Chat extends Component
         $this->dispatch('userTyping', userID: $this->loginID , userName: Auth::user()->name  , selectedUserID: $this->selectedUser->id);
     }
 
+    public function removeAttachment()
+    {
+        $this->attachment = null;
+    }
+
     public function submit()
     {
-        // if you click on the empty then do nothing
-        if (!$this->newMessage) return ;
+        // Vérifier s'il y a un message ou une pièce jointe
+        if (!$this->newMessage && !$this->attachment) return;
 
-        $message = ChatMessage::create([
+        $messageData = [
             'sender_id' => auth()->id(),
             'receiver_id' => $this->selectedUser->id,
-            'message' => $this->newMessage,
-        ]);
+            'message' => $this->newMessage ?: null,
+        ];
+
+        if ($this->attachment) {
+            $path = $this->attachment->store('chat-attachments', 'public');
+            $messageData['attachment_path'] = $path;
+            $messageData['attachment_name'] = $this->attachment->getClientOriginalName();
+            $messageData['attachment_type'] = $this->attachment->getMimeType();
+        }
+
+        $message = ChatMessage::create($messageData);
+
 
         $this->messages->push($message);
 
+        // Réinitialiser les champs
         $this->newMessage = '';
+        $this->attachment = null;
+
 
         // Dispatch event to scroll to bottom
         $this->dispatch('scroll-to-bottom');

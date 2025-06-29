@@ -17,9 +17,9 @@
         <div class="overflow-auto" style="height: calc(100% - 69px);">
             @foreach($groups as $group)
                 <div wire:click="selectGroup({{ $group->id }})"
-                     class="p-3 border-bottom user-list-item @if($selectedGroup && $selectedGroup->id == $group->id) selected-user @endif"
+                     class="p-3 border-bottom user-list-item @if($selectedGroup && $selectedGroup->id == $group->id) selected-user bg-primary @endif "
                      style="cursor: pointer; transition: background-color 0.2s ease;">
-                    <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center">
                         <div class="position-relative">
                             <img
                                 src="{{ $group->image ? asset('storage/' . $group->image) : asset('images/male.jpg') }}"
@@ -223,21 +223,28 @@
                     <h5 class="modal-title" id="addMemberModalLabel">Add Members</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="{{ route('groups.add-member', ['group' => $selectedGroup?->id]) }}" method="POST">
-                    @csrf
+                <form action="{{ $selectedGroup ? route('groups.add-member', ['group' => $selectedGroup->id]) : '#' }}"
+                      method="POST" @if(!$selectedGroup) onsubmit="return false;" @endif>
+                @csrf
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="userId" class="form-label">Select User</label>
-                            <select class="form-select" id="userId" name="user_id" required>
-                                <option value="">Select a user</option>
+                        @if($selectedGroup)
+                            <div class="mb-3">
+                                <label for="userId" class="form-label">Select User</label>
+                                <select class="form-select" id="userId" name="user_id" required>
+                                    <option value="">Select a user</option>
 
-                                @foreach(\App\Models\User::all() as $user)
-                                    @if($selectedGroup && $selectedGroup->created_by !== $user->id && !$selectedGroup->members->contains($user))
-                                    <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
+                                    @foreach(\App\Models\User::all() as $user)
+                                        @if($selectedGroup->created_by !== $user->id && !$selectedGroup->members->contains($user))
+                                            <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                        @else
+                            <div class="alert alert-warning">
+                                Please select a group first.
+                            </div>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

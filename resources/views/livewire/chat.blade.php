@@ -1,4 +1,6 @@
 <div>
+    <!-- Add this before your custom script -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <h1 class="display-4">Chat</h1>
     <p class="lead mb-4">communicate with others</p>
     <hr class="my-4">
@@ -75,6 +77,15 @@
                 <div class="ms-3">
                     <div class="h5 fw-bold mb-0">{{$selectedUser->name}}</div>
                     <div class="small text-muted">Online</div>
+                </div>
+                <!-- Video Call Button -->
+                <div class="ms-auto">
+                    <button type="button" class="btn btn-outline-primary rounded-circle"
+                            id="video-call-btn"
+                            data-user-id="{{$selectedUser->id}}"
+                            style="width: 40px; height: 40px;">
+                        <i class="bi bi-camera-video"></i>
+                    </button>
                 </div>
             </div>
 
@@ -223,10 +234,311 @@
             </form>
         </div>
     </div>
+
+    <!-- Video Call Modal -->
+    <div id="video-call-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000;">
+        <div class="modal-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 10px; padding: 20px; text-align: center;">
+            <h4>Appel vidéo entrant</h4>
+            <div class="video-container mb-3">
+                <video id="local-video" autoplay muted style="width: 200px; height: 150px; border-radius: 10px;"></video>
+                <video id="remote-video" autoplay style="width: 200px; height: 150px; border-radius: 10px; margin-left: 10px;"></video>
+            </div>
+            <div class="call-controls">
+                <button id="accept-call-btn" class="btn btn-success me-2">
+                    <i class="bi bi-telephone-fill"></i> Accepter
+                </button>
+                <button id="decline-call-btn" class="btn btn-danger me-2">
+                    <i class="bi bi-telephone-x-fill"></i> Refuser
+                </button>
+                <button id="end-call-btn" class="btn btn-danger" style="display: none;">
+                    <i class="bi bi-telephone-x-fill"></i> Raccrocher
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+    // Variables globales pour l'appel vidéo
+    let peer;
+    let currentCall;
+    let localStream;
+
+    // Fonctions globales pour l'appel vidéo
+    window.startVideoCall = function(peerId) {
+        // First check device permissions
+        navigator.permissions.query({name: 'camera'})
+            .then(permissionStatus => {
+                return navigator.mediaDevices.enumerateDevices();
+            })
+            .then(devices => {
+                const hasVideo = devices.some(device => device.kind === 'videoinput');
+                const hasAudio = devices.some(device => device.kind === 'audioinput');
+
+                // Configure constraints based on available devices
+                const constraints = {
+                    video: hasVideo ? {
+                        facingMode: 'user',
+                        width: {ideal: 1280},
+                        height: {ideal: 720}
+                    } : false,
+                    audio: hasAudio ? {
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    } : false
+                };
+
+                if (!hasVideo && !hasAudio) {
+                    throw new Error('No media devices found');
+                }
+
+                return navigator.mediaDevices.getUserMedia(constraints);
+            })
+            .then(stream => {
+                localStream = stream;
+                document.getElementById('local-video').srcObject = stream;
+
+                const call = peer.call(peerId, stream);
+                currentCall = call;
+
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('remote-video').srcObject = remoteStream;
+                });
+
+                call.on('close', () => {
+                    endCall();
+                });
+
+                showCallInProgressUI();
+            })
+            .catch(err => {
+                console.error('Media access error:', err);
+
+                if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    // Try fallback to audio only if video fails
+                    startVideoCallFallback(peerId);
+                } else {
+                    handleMediaError(err);
+                }
+            });
+    };
+
+    window.answerCall = function () {
+        checkMediaDevices().then(({hasVideo, hasAudio}) => {
+            const constraints = {
+                video: hasVideo ? {
+                    facingMode: 'user',
+                    width: {ideal: 1280},
+                    height: {ideal: 720}
+                } : false,
+                audio: hasAudio ? {
+                    echoCancellation: true,
+                    noiseSuppression: true
+                } : false
+            };
+
+            return navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    localStream = stream;
+                    document.getElementById('local-video').srcObject = stream;
+
+                    currentCall.answer(stream);
+
+                    currentCall.on('stream', (remoteStream) => {
+                        document.getElementById('remote-video').srcObject = remoteStream;
+                    });
+
+                    showCallInProgressUI();
+                })
+                .catch(err => {
+                    console.error('Erreur d\'accès aux médias:', err);
+                    handleMediaError(err);
+                });
+        }).catch(err => {
+            console.error('Périphériques non disponibles:', err);
+            alert('Aucune caméra ou microphone détecté. Veuillez vérifier vos périphériques.');
+        });
+    };
+
+    window.endCall = function() {
+        if (currentCall) {
+            currentCall.close();
+        }
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        hideCallUI();
+    };
+
+    // Fonction pour vérifier la disponibilité des périphériques
+    async function checkMediaDevices() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const hasVideo = devices.some(device => device.kind === 'videoinput');
+            const hasAudio = devices.some(device => device.kind === 'audioinput');
+
+            if (!hasVideo && !hasAudio) {
+                throw new Error('Aucun périphérique audio/vidéo trouvé');
+            }
+
+            console.log('Périphériques disponibles:', {
+                caméra: hasVideo,
+                microphone: hasAudio
+            });
+
+            return { hasVideo, hasAudio };
+        } catch (error) {
+            console.error('Erreur lors de la vérification des périphériques:', error);
+            throw error;
+        }
+    }
+
+    // Fonction pour gérer les erreurs d'accès aux médias
+    function handleMediaError(error) {
+        let message = 'Device access error: ';
+
+        switch (error.name) {
+            case 'NotFoundError':
+            case 'DevicesNotFoundError':
+                message += 'No camera or microphone found. Please connect your devices.';
+                // Try audio-only fallback
+                startVideoCallFallback(currentCall?.peer);
+                break;
+            case 'NotAllowedError':
+            case 'PermissionDeniedError':
+                message += 'Permissions refusées. Veuillez autoriser l\'accès à la caméra et au microphone dans les paramètres du navigateur.';
+                break;
+            case 'NotReadableError':
+            case 'TrackStartError':
+                message += 'Périphériques déjà utilisés par une autre application. Veuillez fermer les autres applications utilisant la caméra/microphone.';
+                break;
+            case 'OverconstrainedError':
+            case 'ConstraintNotSatisfiedError':
+                message += 'Configuration des périphériques non supportée.';
+                break;
+            case 'TypeError':
+                message += 'Configuration invalide.';
+                break;
+            case 'AbortError':
+                message += 'Opération interrompue.';
+                break;
+            default:
+                message += error.message || 'Erreur inconnue';
+        }
+
+        alert(message);
+        console.error('Détails de l\'erreur:', error);
+    }
+
+    // Version alternative avec paramètres plus permissifs
+    window.startVideoCallFallback = function(peerId) {
+        // Essayer d'abord avec audio et vidéo
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(handleStream)
+            .catch(() => {
+                // Si échec, essayer seulement audio
+                console.log('Tentative avec audio seulement...');
+                return navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            })
+            .then(handleStream)
+            .catch(() => {
+                // Si échec, essayer seulement vidéo
+                console.log('Tentative avec vidéo seulement...');
+                return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            })
+            .then(handleStream)
+            .catch(err => {
+                console.error('Impossible d\'accéder aux périphériques:', err);
+                handleMediaError(err);
+            });
+
+        function handleStream(stream) {
+            localStream = stream;
+            document.getElementById('local-video').srcObject = stream;
+
+            const call = peer.call(peerId, stream);
+            currentCall = call;
+
+            call.on('stream', (remoteStream) => {
+                document.getElementById('remote-video').srcObject = remoteStream;
+            });
+
+            call.on('close', () => {
+                endCall();
+            });
+
+            showCallInProgressUI();
+        }
+    };
+
+    function initializePeer() {
+        // Create a peer with the current user's ID
+        peer = new Peer("user_{{ auth()->id() }}");
+
+        peer.on('open', (id) => {
+            console.log('PeerJS connected with ID:', id);
+        });
+
+        peer.on('call', (incomingCall) => {
+            currentCall = incomingCall;
+            showCallRequestModal(incomingCall.peer);
+        });
+
+        peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+        });
+    }
+
+    function showCallRequestModal(callerPeerId) {
+        document.getElementById('video-call-modal').style.display = 'block';
+    }
+
+    function showCallInProgressUI() {
+        document.getElementById('accept-call-btn').style.display = 'none';
+        document.getElementById('decline-call-btn').style.display = 'none';
+        document.getElementById('end-call-btn').style.display = 'block';
+        document.getElementById('video-call-modal').style.display = 'block';
+    }
+
+    function hideCallUI() {
+        const modal = document.getElementById('video-call-modal');
+        const acceptBtn = document.getElementById('accept-call-btn');
+        const declineBtn = document.getElementById('decline-call-btn');
+        const endBtn = document.getElementById('end-call-btn');
+        const localVideo = document.getElementById('local-video');
+        const remoteVideo = document.getElementById('remote-video');
+
+        modal.style.display = 'none';
+        acceptBtn.style.display = 'inline-block';
+        declineBtn.style.display = 'inline-block';
+        endBtn.style.display = 'none';
+
+        if (localVideo.srcObject) {
+            localVideo.srcObject.getTracks().forEach(track => track.stop());
+            localVideo.srcObject = null;
+        }
+        if (remoteVideo.srcObject) {
+            remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+            remoteVideo.srcObject = null;
+        }
+    }
+
     document.addEventListener('livewire:initialized', function () {
+        // Initialize PeerJS when the component loads
+        initializePeer();
+
+        // Ajouter l'event listener pour le bouton d'appel vidéo
+        document.getElementById('video-call-btn').addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            startVideoCall('user_' + userId);
+        });
+
+        // Ajouter les event listeners pour les boutons du modal
+        document.getElementById('accept-call-btn').addEventListener('click', answerCall);
+        document.getElementById('decline-call-btn').addEventListener('click', endCall);
+        document.getElementById('end-call-btn').addEventListener('click', endCall);
+
+        // Le reste du code Livewire...
         Livewire.on('userTyping', function (event) {
             console.log(event);
             window.Echo.private(`chat.${event.selectedUserID}`).whisper('typing', {
@@ -234,6 +546,7 @@
                 userName: event.userName,
             });
         });
+
         window.Echo.private(`chat.{{$loginID}}`).listenForWhisper('typing', (e) => {
             const indicator = document.getElementById('typing-indicator');
             const dots = document.querySelector('.typing-dots');
@@ -246,6 +559,30 @@
                 indicator.style.display = 'none';
                 dots.style.display = 'none';
             }, 2000);
-        })
+        });
+
+        // Listen for video call events
+        window.Echo.private(`video-call.{{ auth()->id() }}`)
+            .listen('RequestVideoCall', (e) => {
+                showCallRequestModal(e.user.peerId);
+            })
+            .listen('RequestVideoCallStatus', (e) => {
+                if (e.user.status === 'accepted') {
+                    // The call was accepted, establish connection
+                } else {
+                    // Call was declined
+                    alert('Call was declined');
+                    hideCallUI();
+                }
+            });
+
+        window.Echo.private(`video-call.{{$loginID}}`)
+            .listen('RequestVideoCall', (e) => {
+                console.log('Video call request from:', e.user);
+                showCallRequestModal(e.user);
+            })
+            .listen('RequestVideoCallStatus', (e) => {
+                console.log('Video call status update:', e.user);
+            });
     });
 </script>
